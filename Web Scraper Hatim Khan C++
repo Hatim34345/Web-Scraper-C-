@@ -1,0 +1,50 @@
+#include <iostream>
+#include <string>
+#include <curl/curl.h>
+
+// Callback function to write scraped data
+size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) {
+    size_t totalSize = size * nmemb;
+    output->append(static_cast<char*>(contents), totalSize);
+    return totalSize;
+}
+
+int main() {
+    // Initialize libcurl
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    // Create a CURL object
+    CURL* curl = curl_easy_init();
+
+    if (curl) {
+        // Set the URL to scrape
+        std::string url = "https://example.com";
+
+        // Set the callback function to handle the scraped data
+        std::string responseData;
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+
+        // Perform the request
+        CURLcode res = curl_easy_perform(curl);
+        if (res == CURLE_OK) {
+            // Scrape successful, print the scraped data
+            std::cout << "Scraped data:\n" << responseData << std::endl;
+        } else {
+            // Error occurred during the request
+            std::cerr << "Failed to scrape the URL: " << curl_easy_strerror(res) << std::endl;
+        }
+
+        // Clean up curl
+        curl_easy_cleanup(curl);
+    } else {
+        // Failed to initialize curl
+        std::cerr << "Failed to initialize libcurl" << std::endl;
+    }
+
+    // Clean up libcurl
+    curl_global_cleanup();
+
+    return 0;
+}
